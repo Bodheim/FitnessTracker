@@ -1,66 +1,78 @@
 const router = require('express').Router();
-const mongoose = require('mongoose');
 
 const db = require('../models');
-//Get Route for one workout
-router.get('/api/workouts', async (req, res) => {
-  db.Workout.aggregate([
-    {
-      $set: {
-        totalDuration: { $sum: '$exercises.duration' },
+
+//Create GET route to retrieve most recent workout
+router.get('/workouts', async (req, res) => {
+  try {
+    const newestWorkout = await db.Workout.aggregate([
+      {
+        $addFields: {
+          totalDuration: { $sum: '$exercises.duration' },
+          totalWeight: { $sum: '$exercises.weight' },
+          totalSets: { $sum: '$exercises.sets' },
+          totalReps: { $sum: '$exercises.reps' },
+          totalDistance: { $sum: '$exercises.distance' },
+        },
       },
-    },
-  ]).then((result) => {
-    res.json(result);
-  });
+    ]);
+
+    // const newestWorkout = await db.Workout.find({}).sort({ day: 1 });
+
+    console.log(newestWorkout);
+    res.json(newestWorkout);
+  } catch (error) {
+    console.log(error);
+  }
 });
 
-router.get('/api/workouts/range', (req, res) => {
-  console.log('Dash Board to get all information');
-
-  db.Workout.aggregate([
-    {
-      $set: {
-        totalDuration: { $sum: '$exercises.duration' },
-      },
-    },
-  ])
-    .sort({ day: -1 })
-    .limit(7)
-    .sort({ day: 1 })
-    .then((result) => {
-      console.log('Result of Aggregate');
-      console.log(result);
-      res.json(result);
-    });
+//Create a new workout
+router.post('/workouts', async (req, res) => {
+  try {
+    const newWorkout = await db.Workout.create(req.body);
+    res.json(newWorkout);
+  } catch (error) {
+    console.log(error);
+  }
 });
 
-router.put('/api/workouts/:id', async (req, res) => {
-  console.log('hello');
-  console.log(req.body);
-  await db.Workout.findOneAndUpdate(
-    {
-      _id: req.params.id,
-    },
-    {
-      $push: {
-        exercises: req.body,
-      },
-    },
-    (err, data) => {
-      if (err) {
-        res.json(err);
-      } else {
-        console.log(data);
-        res.json(data);
+//Add an exercise to the most recent workout
+router.put('/workouts/:id', async (req, res) => {
+  try {
+    const updatedWorkout = await db.Workout.findOneAndUpdate(
+      { _id: req.params.id },
+      {
+        $push: {
+          exercises: req.body,
+        },
       }
-    }
-  );
+    );
+    res.json(updatedWorkout);
+  } catch (error) {
+    console.log(error);
+  }
 });
 
-router.post('/api/workouts', async (req, res) => {
-  const data = await db.Workout.create({});
-  res.json(data);
+router.get('/workouts/range', async (req, res) => {
+  try {
+    const aggregateData = await db.Workout.aggregate([
+      {
+        $addFields: {
+          totalDuration: { $sum: '$exercises.duration' },
+          totalWeight: { $sum: '$exercises.weight' },
+          totalSets: { $sum: '$exercises.sets' },
+          totalReps: { $sum: '$exercises.reps' },
+          totalDistance: { $sum: '$exercises.distance' },
+        },
+      },
+    ]);
+
+    // const aggregateData = await db.Workout.find({});
+    // console.log(aggregateData);
+    res.json(aggregateData);
+  } catch (error) {
+    console.log(error);
+  }
 });
 
 module.exports = router;
