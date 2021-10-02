@@ -17,7 +17,7 @@ app.use(routes);
 app.use(express.static('public'));
 
 mongoose.connect(
-  process.env.MONGODB_URI || 'mongodb://localhost/testconnection',
+  process.env.MONGODB_URI || 'mongodb://localhost/desolate-mountain-14397',
   {
     useNewUrlParser: true,
     useUnifiedTopology: true,
